@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="T53-Ac-A0y">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+    </dependencies>
+    <scenes>
+        <!--detect-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController title="人脸检测" id="BYZ-38-t0r" userLabel="detect" customClass="KKKDectViewController" customModule="KKKFaceService" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="y3c-jy-aDJ"/>
+                        <viewControllerLayoutGuide type="bottom" id="wfy-db-euE"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Et2-KU-PXm" userLabel="previewView">
+                                <rect key="frame" x="20" y="64" width="580" height="436"/>
+                                <color key="backgroundColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                            </view>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="N2x-hK-tm3">
+                                <rect key="frame" x="180" y="236" width="240" height="128"/>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" red="1" green="0.5" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                        <constraints>
+                            <constraint firstItem="Et2-KU-PXm" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" id="5Ro-cg-mVh"/>
+                            <constraint firstAttribute="trailing" secondItem="Et2-KU-PXm" secondAttribute="trailing" id="b05-fF-l2y"/>
+                            <constraint firstItem="Et2-KU-PXm" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" id="dGX-uk-TAE"/>
+                            <constraint firstItem="Et2-KU-PXm" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="igC-eD-WIu"/>
+                            <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="Et2-KU-PXm" secondAttribute="bottom" constant="100" id="nv9-Oj-cb5"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" id="1Gs-bU-xDk"/>
+                    <connections>
+                        <outlet property="previewView" destination="Et2-KU-PXm" id="OCa-My-3Uz"/>
+                        <outlet property="testkkView" destination="N2x-hK-tm3" id="BxY-EQ-EuE"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1026" y="389"/>
+        </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="KH0-tE-mnb">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="T53-Ac-A0y" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="ntH-lS-iaU">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="BYZ-38-t0r" kind="relationship" relationship="rootViewController" id="4pc-5b-hco"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="MZV-6A-eph" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="93" y="1049"/>
+        </scene>
+        <!--pdf-->
+        <scene sceneID="OfA-oJ-Mz1">
+            <objects>
+                <viewController id="uDQ-ZK-Wi6" userLabel="pdf" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Foa-3M-uXJ"/>
+                        <viewControllerLayoutGuide type="bottom" id="mG5-oX-bTF"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="ns1-hz-m68">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="uxd-KN-z7z" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+        </scene>
+    </scenes>
+</document>
