@@ -13,14 +13,25 @@ import ImageIO
 class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureManagerDelegate {
 
     @IBOutlet weak var previewView: UIView!
-    
     @IBOutlet weak var testkkView: UIImageView!
+    @IBOutlet weak var infoLabel: UILabel!
     
     var captureManager:CaptureManager?
     var previewLayer:AVCaptureVideoPreviewLayer?
     var viewCanvas:CanvasView?
     var faceDetector:IFlyFaceDetector?
     
+    var mouthWidthLast:Int?
+    var mouthHeightLast:Int?
+    var mouthOpenedCounts:Int?
+    
+    var noseX:Int?
+    var noseXLeft:Int?
+    var noseXRight:Int?
+    
+    var isSizeValid:Bool?
+    var isMouthValid:Bool?
+    var isShakingValide:Bool?
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
@@ -111,6 +122,12 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         }
     }
     
+    func isFaceSizeValid(left:CGFloat,right:CGFloat,top:CGFloat,bottom:CGFloat) -> Bool {
+        
+        return true
+    }
+    
+    
     func parseDetect(positionDic:NSDictionary,faceImg:IFlyFaceImage) -> NSString {
         guard (positionDic.allKeys.count>0) else{
             return ""
@@ -140,6 +157,9 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             rectFace = rSwap(rectFace)
             rectFace = rRotate90(rectFace, faceImg.height, faceImg.width)
         }
+        
+//        let ()isBigFace:Bool = false
+        
         
         rectFace = rScale(rectFace, widthScaleBy, heightScaleBy)
         return  NSStringFromCGRect(rectFace)
@@ -283,6 +303,21 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         }
         
 
+        func clear(){
+            self.mouthWidthLast = 0
+            self.mouthHeightLast = 0
+            
+            self.noseX = 0
+            self.noseXLeft = 0
+            self.noseXRight = 0
+            
+            self.isSizeValid = false
+            self.isMouthValid = false
+            self.isShakingValide = false
+            
+            
+        }
+        
 }
     
     
