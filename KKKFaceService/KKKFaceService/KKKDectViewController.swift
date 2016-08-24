@@ -61,6 +61,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     var isShakingValide:Bool
     var resultStrings:String?
     var faceGID:String?
+    var faceScore:String?
     var iFlySpFaceRequest: IFlyFaceRequest?
     
     var detectStatus:KKKFaceDetectStatus?
@@ -167,10 +168,21 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.addStillImageOutput()
         self.captureManager?.setup()
         self.captureManager?.addObserver()
-        self.addTopButtonAction()
+        self.addRightBarAction()
     }
     
-    func addTopButtonAction() -> Void {
+    func addLeftBarAction() -> Void {
+        let item = UIBarButtonItem(title: "重新识别", style: UIBarButtonItemStyle.Plain, target: self, action: #selector(refreshRecognition))
+        self.navigationItem.leftBarButtonItem = item
+    }
+
+    func refreshRecognition() -> Void {
+        self.navigationItem.rightBarButtonItem = nil
+        self.clear()
+        self.previewLayer?.session.startRunning()
+    }
+    
+    func addRightBarAction() -> Void {
         let item = UIBarButtonItem(title: "注册", style: UIBarButtonItemStyle.Plain, target: self, action: #selector(deleteFaceGID))
         self.navigationItem.rightBarButtonItem = item
     }
@@ -583,6 +595,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                 let verf = jsonArr[KCIFlyFaceResultVerf]
                 // 校验相似度
                 _ = jsonArr["score"]
+                self.faceScore = String.init(format: "%.2f", (jsonArr["score"]?.floatValue)!)
                 
                 if let _ = verf?.boolValue {
                     detectStatus = .KKKFaceDetectStatusRecognitionSuccess
@@ -649,12 +662,15 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             info = "不要动,1s后拍照..."
         case .KKKFaceDetectStatusRegisterFail:
             info = "注册失败"
+            addLeftBarAction()
         case .KKKFaceDetectStatusRegisterSuccess:
             info = "注册成功"
         case .KKKFaceDetectStatusRecognitionFail:
             info = "识别失败"
+            addLeftBarAction()
         case .KKKFaceDetectStatusRecognitionSuccess:
-            info = "识别成功\n点击左上角可以重新识别"
+            info = "GID:\(self.faceGID):识别结束-\(self.faceScore)分"
+            addLeftBarAction()
         default:
             info = "默认检测人脸ing..."
         }
@@ -720,13 +736,13 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     
     func doFaceRequest()  {
         self.resultStrings = nil;
-        if self.iFlySpFaceRequest == nil {
+        //if self.iFlySpFaceRequest == nil{
             self.iFlySpFaceRequest = IFlyFaceRequest.sharedInstance()
             self.iFlySpFaceRequest?.delegate = self
             self.iFlySpFaceRequest?.setParameter(kIFlyAPPID, forKey: IFlySpeechConstant.APPID())
             self.iFlySpFaceRequest?.setParameter(kIFlyAPPID, forKey: "auth_id")
             self.iFlySpFaceRequest?.setParameter("del", forKey: "property")
-        }
+        //}
         
         if isRegister == true {
             self.iFlySpFaceRequest?.setParameter(IFlySpeechConstant.FACE_REG(), forKey: IFlySpeechConstant.FACE_SST())
@@ -757,12 +773,11 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         }else{
             
             self.iFlySpFaceRequest?.setParameter(IFlySpeechConstant.FACE_VERIFY(), forKey: IFlySpeechConstant.FACE_SST())
-            //            self.iFlySpFaceRequest?.setParameter(
-            //                "e7c9663d3331a6f8ed211cb5417067cd", forKey: IFlySpeechConstant.FACE_GID())
-            self.iFlySpFaceRequest?.setParameter(faceGID, forKey: IFlySpeechConstant.FACE_GID())
+            self.iFlySpFaceRequest?.setParameter(self.faceGID, forKey: IFlySpeechConstant.FACE_GID())
             self.iFlySpFaceRequest?.setParameter("2000", forKey: "wait_time")
             //  压缩图片大小
 
+            
             
 //            let imgData = testkkView.image!.compressedData()
             
@@ -773,7 +788,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             UIGraphicsEndImageContext();
             let imgData = UIImageJPEGRepresentation(newImage, 0.001)!
 
-            print("verify image data length: \(imgData.length)")
+            print("faceid:\(self.faceGID),verify image data length: \(imgData.length)")
             self.iFlySpFaceRequest?.sendRequest(imgData)
         }
         
