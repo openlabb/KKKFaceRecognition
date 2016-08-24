@@ -41,6 +41,7 @@
 		4B9D24371D65BE630033DB46 /* KKKDectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9D24361D65BE630033DB46 /* KKKDectViewController.swift */; };
 		4B9D24391D6AD8230033DB46 /* libstdc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B9D24381D6AD8230033DB46 /* libstdc++.tbd */; };
 		4B9D243B1D6AD8290033DB46 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B9D243A1D6AD8290033DB46 /* libz.tbd */; };
+		4B9E38821D6D8C2E0012F166 /* 111.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4B9E38811D6D8C2E0012F166 /* 111.jpg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +94,7 @@
 		4B9D24381D6AD8230033DB46 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
 		4B9D243A1D6AD8290033DB46 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		4B9D243E1D6B0CF40033DB46 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
+		4B9E38811D6D8C2E0012F166 /* 111.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 111.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +128,7 @@
 		4B82688A1D658A7A008C2315 = {
 			isa = PBXGroup;
 			children = (
+				4B9E38811D6D8C2E0012F166 /* 111.jpg */,
 				4B8268CE1D658C7F008C2315 /* Libs */,
 				4B8268CD1D658C5B008C2315 /* Frameworks */,
 				4B8268AA1D658AE2008C2315 /* KKKFaceService-Bridged-Header.h */,
@@ -319,6 +322,7 @@
 				4B8268A11D658A7A008C2315 /* LaunchScreen.storyboard in Resources */,
 				4B82689E1D658A7A008C2315 /* Assets.xcassets in Resources */,
 				4B82689C1D658A7A008C2315 /* Main.storyboard in Resources */,
+				4B9E38821D6D8C2E0012F166 /* 111.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
