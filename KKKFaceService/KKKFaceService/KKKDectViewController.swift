@@ -45,13 +45,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
 
     var totalFaceCounts:Int
     
-    var eyeLeftCornerYLast:Int
-    var eyeLeftOpenedCounts:Int
-    var eyeLeftYLast:Int
-    var eyeRightCornerYLast:Int
-    var eyeRightYLast:Int
-    var eyeMouthYLast:Int
-    var eyeMouthXLast:Int
+    var itemOpenedCounts:Int
 
 
     var mouthWidthLast:Int
@@ -79,18 +73,17 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
 //        }
 //    }
     
+    var timeLast:NSTimeInterval?
+    var markInfoLast:NSMutableDictionary
+    var eyeBlinkCounts:NSInteger
+    
     //MARK: ----Life cycle
     
     required init?(coder aDecoder: NSCoder) {
         self.totalFaceCounts = 0
         
-        self.eyeLeftCornerYLast = 0
-        self.eyeRightCornerYLast = 0
-        self.eyeLeftOpenedCounts = 0
-        self.eyeLeftYLast = 0
-        self.eyeRightYLast = 0
-        self.eyeMouthYLast = 0
-        self.eyeMouthXLast = 0
+        self.itemOpenedCounts = 0
+        self.eyeBlinkCounts = 0
         
         self.mouthWidthLast = 0
         self.mouthHeightLast = 0
@@ -108,6 +101,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
 
         self.resultStrings = ""
         self.isRegister = true
+        self.markInfoLast = ["left_eye_center":[].mutableCopy() ,"left_eyebrow_middle":[].mutableCopy(),"mouth_middle":[].mutableCopy(),"left_eye_height":[].mutableCopy()]
         super.init(coder: aDecoder)
         //        fatalError("init(coder:) has not been implemented")
     }
@@ -125,6 +119,8 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.configSubViews()
         
         self.loadConfigData()
+        
+        self.timeLast = NSDate().timeIntervalSince1970
     }
 
     
@@ -194,6 +190,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.navigationItem.rightBarButtonItem = nil
         self.clear()
         self.previewLayer?.session.startRunning()
+        self.timeLast = NSDate().timeIntervalSince1970
     }
     
     func addRightBarAction() -> Void {
@@ -219,6 +216,11 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         }
 
         let stringAndData:NSArray = [strResult!,img]
+        
+        let timeCost:Double = NSDate().timeIntervalSince1970 - timeLast!
+        if timeCost >= 10 {
+            clear()
+        }
         
         self.performSelectorOnMainThread(#selector(parseResult), withObject: stringAndData, waitUntilDone: false)
     }
@@ -280,6 +282,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             }
         }
         
+        
         showStatus()
         guard ret else{
             self.clear()
@@ -292,17 +295,12 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         if isEyeValid {
             return true
         }
-        
-        var eyeLeftY:Int = 0
-        var eyeLeftCornerY:Int = 0
-        var eyeRightCornerY:Int = 0
-        var eyeMouthY:Int = 0
-        var eyeMouthX:Int = 0
-        
+
+        let markInfoDictinaryLast:NSMutableDictionary = self.markInfoLast
         
         let isFrontCamera = self.captureManager?.videoDeviceInput.device.position == .Front;
         
-        
+        var keyValidCounts:Int = 0
         let keys = landmarkDic!.keyEnumerator()
         for keyItem in keys {
             let key:String = keyItem as! String
@@ -316,65 +314,73 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                 p = pRotate90(p, imgHeight, imgWidth)
             }
             
-            if key == "left_eye_center" {
-                eyeLeftY = Int(p.y)
+            if (key == "left_eye_center" || key == "left_eyebrow_middle" || key == "mouth_middle") {
+                let infoArray:NSMutableArray = markInfoDictinaryLast[key] as! NSMutableArray
+                infoArray.addObject(Int(p.y))
+                keyValidCounts += 1
+                itemOpenedCounts += 1
             }
-            if key == "left_eye_left_corner" {
-                eyeLeftCornerY = Int(p.y)
-            }
-            if key == "left_eye_right_corner" {
-                eyeRightCornerY = Int(p.y)
-            }
-            if key == "nose_top" {
-                eyeMouthY = Int(p.y)
-                eyeMouthX = Int(p.x)
-
-            }
-
-
-
-            
-            
         }
         
-        let dateFormatter:NSDateFormatter = NSDateFormatter();
-        dateFormatter.dateFormat = "yyyyMMddHHmmss";
-        let dateString:String = dateFormatter.stringFromDate(NSDate())
+        let heightArray:NSMutableArray = markInfoDictinaryLast["left_eye_height"] as! NSMutableArray
+        let leftEyeBowArray:NSMutableArray = markInfoDictinaryLast["left_eyebrow_middle"] as! NSMutableArray
+        let leftEyeArray:NSMutableArray = markInfoDictinaryLast["left_eye_center"] as! NSMutableArray
+        heightArray.addObject(Int((leftEyeArray.lastObject?.intValue)!) - Int((leftEyeBowArray.lastObject?.intValue)!))
         
-        print("\(dateString)----眨眼前:\(eyeLeftYLast),\(eyeLeftCornerYLast),\(eyeRightCornerYLast),\(eyeMouthXLast),\(eyeMouthYLast)")
+
         
-        print("\(eyeLeftOpenedCounts)----眨眼后:\(eyeLeftY),\(eyeLeftCornerY),\(eyeRightCornerY),\(eyeMouthX),\(eyeMouthY)")
-        if eyeLeftYLast>0 && eyeLeftY>0 {
-            //眼镜变化 嘴巴不动
-            if (abs(eyeLeftY - eyeLeftYLast) >= 5
-                && abs(eyeLeftCornerY - eyeLeftCornerYLast)>=2
-                && abs(eyeRightCornerY - eyeRightCornerYLast)>=2
-                && abs(eyeMouthX - eyeMouthXLast)<5
-                && abs(eyeMouthY - eyeMouthYLast)<10 ) {
-                eyeLeftOpenedCounts += 1
-                
-                if eyeLeftOpenedCounts > 1 {
-                    isEyeValid = true
+        //假设每秒20帧，每帧轮keyValidCounts次,times内每秒检查一次
+        let remains =  itemOpenedCounts%(20*keyValidCounts)
+        let times = itemOpenedCounts/(20*keyValidCounts)
+        let maxTimes = 4
+        if  remains == 0 && times < maxTimes {
+            let hArray:Array<Int> = markInfoDictinaryLast["left_eye_height"] as! Array<Int>
+            let hMax:Int = hArray.maxElement()!
+            let hMin:Int = hArray.minElement()!
+            var hMaxIndex:Int = 0
+            var hMinIndex:Int = 0
+        
+            for (index, v) in hArray.enumerate() {
+                if v == hMax {
+                    hMaxIndex = index
+                 }
+                if v == hMin {
+                    hMinIndex = index
                 }
-                print(" ✅ 1.检测到眨眼 -----\n")
-                return true
-            }
-        }
-        
-        if eyeLeftY>0 && isEyeValid==false {
-            if eyeLeftOpenedCounts == 0 || eyeLeftOpenedCounts == 300 || eyeLeftOpenedCounts == 600  {
-                //每隔10s算一个点
-                eyeLeftYLast = eyeLeftY
-                eyeLeftCornerYLast = eyeLeftCornerY
-                eyeRightCornerYLast = eyeRightCornerY
-                eyeMouthXLast = eyeMouthX
-                eyeMouthYLast = eyeMouthY
-            }else if(eyeLeftOpenedCounts == 1200){
-                clear()
             }
             
+            let eyeLeftCenterYMax:Int = (markInfoDictinaryLast["left_eye_center"] as! Array<Int>)[hMaxIndex]
+            let eyeLeftCenterYMin:Int = (markInfoDictinaryLast["left_eye_center"] as! Array<Int>)[hMinIndex]
+            let eyebrowLeftCenterYMax:Int = (markInfoDictinaryLast["left_eyebrow_middle"] as! Array<Int>)[hMaxIndex]
+            let eyebrowLeftCenterYMin:Int = (markInfoDictinaryLast["left_eyebrow_middle"] as! Array<Int>)[hMinIndex]
+            let eyemouthCenterYMax:Int = (markInfoDictinaryLast["mouth_middle"] as! Array<Int>)[hMaxIndex]
+            let eyemouthCenterYMin:Int = (markInfoDictinaryLast["mouth_middle"] as! Array<Int>)[hMinIndex]
+            
+            print("----kkkkk--\(itemOpenedCounts)----- \(markInfoDictinaryLast)")
+            print("----最大\(hMax)--\(eyeLeftCenterYMax)--\(eyebrowLeftCenterYMax)--\(eyemouthCenterYMax)---")
+            print("----最小\(hMin)--\(eyeLeftCenterYMin)--\(eyebrowLeftCenterYMin)--\(eyemouthCenterYMin)---")
+            
+            //眉眼间距减少,鼻子位置稳住
+            if (hMax - hMin) >= 5
+                && (eyemouthCenterYMax - eyemouthCenterYMin) <= 3
+            {
+                eyeBlinkCounts += 1
+                if eyeBlinkCounts == 2 {
+                    isEyeValid = true
+                    self.emptyEyeMarkLast()
+                }
+                return true
+
+
+            }
         }
         
+        if times > maxTimes  {
+            self.clear()
+        }
+//        let dateFormatter:NSDateFormatter = NSDateFormatter();
+//        dateFormatter.dateFormat = "yyyyMMddHHmmss";
+//        let dateString:String = dateFormatter.stringFromDate(NSDate())
         return false
     }
     
@@ -537,7 +543,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             return nil
         }
         
-        print(" ✅ 1.检测到合格Size的人脸 -----\n")
+//        print(" ✅ 1.检测到合格Size的人脸 -----\n")
 
         
         rectFace = rScale(rectFace, widthScaleBy, heightScaleBy)
@@ -578,10 +584,12 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             
         }
         
-        self.totalFaceCounts+=1
-        if self.totalFaceCounts == 100 {
-            clear()
-        }
+
+        
+//        self.totalFaceCounts+=1
+//        if self.totalFaceCounts == 500 {
+//            clear()
+//        }
         
 
         self.isFaceEyeValid(landmarkDic, imgHeight: faceImg.height, imgWidth: faceImg.width)
@@ -603,8 +611,8 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     
     
     func parseResult(paraList:NSArray) -> Void {
-        
         do{
+            
             let result = paraList[0] as! String
             let faceImg:IFlyFaceImage = paraList[1] as! IFlyFaceImage
             let resultData = result.dataUsingEncoding(NSUTF8StringEncoding)
@@ -630,6 +638,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                 })
                 return
             }
+            
             
             //face detected
             //let dataPtr = CFDataCreate(kCFAllocatorDefault, UnsafePointer<UInt8>(faceImg.data.bytes), faceImg.data.length)
@@ -876,12 +885,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     
     func clear(){
         self.totalFaceCounts = 0
-        
-        self.eyeLeftYLast = 0
-        self.eyeLeftCornerYLast = 0
-        self.eyeRightCornerYLast = 0
-        self.eyeLeftOpenedCounts = 0
-        self.eyeLeftYLast = 0
+        self.itemOpenedCounts = 0
         
         self.mouthOpenedCounts = 0
         self.mouthWidthLast = 0
@@ -898,6 +902,15 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.isShakingValide = false
         
         self.detectStatus = .KKKFaceDetectStatusWaiting
+        self.timeLast = NSDate().timeIntervalSince1970
+        self .emptyEyeMarkLast()
+
+    }
+    
+    func emptyEyeMarkLast(){
+        self.markInfoLast = ["left_eye_center":[].mutableCopy() ,"left_eyebrow_middle":[].mutableCopy(),"mouth_middle":[].mutableCopy(),"left_eye_height":[].mutableCopy()]
+        self.eyeBlinkCounts = 0
+
     }
     
     
