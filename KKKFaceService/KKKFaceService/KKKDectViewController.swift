@@ -13,20 +13,6 @@ import ImageIO
 public let kIFlyAPPID = "57a454e5"
 
 
-public enum KKKFaceDetectStatus:Int {
-    case KKKFaceDetectStatusWaiting
-    case KKKFaceDetectStatusTooFar
-    case KKKFaceDetectStatusTooClose
-    case KKKFaceDetectStatusToAdjustFace
-    case KKKFaceDetectStatusToBlinkEye
-    case KKKFaceDetectStatusToOpenMouth
-    case KKKFaceDetectStatusToShakeHead
-    case KKKFaceDetectStatusToRequest
-    case KKKFaceDetectStatusRegisterFail
-    case KKKFaceDetectStatusRegisterSuccess
-    case KKKFaceDetectStatusRecognitionFail
-    case KKKFaceDetectStatusRecognitionSuccess
-    case KKKFaceDetectStatusNone}
 
 class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureManagerDelegate {
     
@@ -253,14 +239,6 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             else if isEyeValid == true && isMouthValid == false && isShakingValide == false{
                 //1－脸部大小size满足✅,2－张嘴条件未满足❎
                 detectStatus =  .KKKFaceDetectStatusToOpenMouth
-//                if (left < 100 || top < 100 || right > 460 || bottom > 400) {
-//                    detectStatus =  .KKKFaceDetectStatusToAdjustFace
-//                    clear()
-//                    ret = true
-//                }else{
-//                    detectStatus =  .KKKFaceDetectStatusToOpenMouth
-//                    ret = true
-//                }
             }else if isEyeValid == true && isMouthValid == true && isShakingValide == false{
                 //2－张嘴条件满足✅,3－摇头条件未满足❎
                 detectStatus =  .KKKFaceDetectStatusToShakeHead
@@ -290,6 +268,17 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         }
         return true
     }
+    
+    func keysMatters(status:KKKFaceDetectStatus) -> Array<String>{
+        switch status {
+        case .KKKFaceDetectStatusToBlinkEye:
+            return ["left_eye_center","left_eyebrow_middle","mouth_middle"]
+        default:
+            return []
+        }
+    }
+    
+    
     
     func isFaceEyeValid(landmarkDic:NSDictionary?,imgHeight:CGFloat,imgWidth:CGFloat) -> Bool {
         if isEyeValid {
@@ -365,7 +354,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                 && (eyemouthCenterYMax - eyemouthCenterYMin) <= 3
             {
                 eyeBlinkCounts += 1
-                if eyeBlinkCounts == 2 {
+                if eyeBlinkCounts == 1 {
                     isEyeValid = true
                     self.emptyEyeMarkLast()
                 }
@@ -520,7 +509,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         let left:CGFloat = CGFloat((positionDic.objectForKey(KCIFlyFaceResultLeft)!.floatValue)!)
         let right:CGFloat = CGFloat(positionDic.objectForKey(KCIFlyFaceResultRight)!.floatValue)
         
-        let cx:CGFloat = (left+right)/2
+        let cx:CGFloat = (left + right)/2
         let cy:CGFloat = (top + bottom)/2
         let w:CGFloat = right - left
         let h:CGFloat = bottom - top
@@ -825,9 +814,6 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     }
     
     
-    
-    
-    
     //MARK: ----helper
     
     
@@ -853,7 +839,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         case .KKKFaceDetectStatusToShakeHead:
             info = "请摇摇你的脑袋.."
         case .KKKFaceDetectStatusToRequest:
-            info = "不要动,1s后拍照..."
+            info = "不要动,1s后识别..."
         case .KKKFaceDetectStatusRegisterFail:
             info = "注册失败"
         case .KKKFaceDetectStatusRegisterSuccess:
@@ -936,6 +922,8 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.isRegister = true
         self.navigationItem.rightBarButtonItem = nil
     }
+    
+    
     
     //MARK: ----Request: register or recognition
     
