@@ -24,6 +24,7 @@ class KKKDetectValidatorEye:KKKDetectStatusValidator{
       4,累计满足1,2,3条件validCountsMax次
     */
     override func  isValid(detector:KKKDetector) -> Bool{
+        self.checkCounts+=1
         let info:NSMutableDictionary = detector.lastMarkInfo.mutableCopy() as! NSMutableDictionary
         //需要两者的差值，Y轴间距
         var pair:Array<String> = ["left_eye_center","left_eyebrow_middle"]
@@ -32,9 +33,14 @@ class KKKDetectValidatorEye:KKKDetectStatusValidator{
         let pairInfo:NSDictionary = info[pairName] as! NSDictionary
         //差值，Y轴间距
         let deltaY:CGFloat = CGFloat((pairInfo.objectForKey(KCIFlyFaceResultPointY)?.floatValue)!)
+        if minYDetalLeft == 0 {
+            minYDetalLeft = deltaY
+        }
+        
         let newMin:CGFloat =  min(deltaY, minYDetalLeft)
         //更新差值最小值，Y轴间距
-        if newMin != minYDetalLeft {
+        
+        if minYDetalLeft > 0 && newMin != minYDetalLeft {
             minIndex = infoArray.count
             minYDetalLeft = newMin
         }
@@ -49,8 +55,8 @@ class KKKDetectValidatorEye:KKKDetectStatusValidator{
         self.infoArray.addObject(info)
         
         //看看最大值最小值时候鼻子的变化，避免拿个图片晃啊晃来假装
-        let pairDeltaToMatch = 10
-        let noseDletaToMatch = 10
+        let pairDeltaToMatch = 6
+        let noseDletaToMatch = 3
         if (maxYDetalLeft - minYDetalLeft) > CGFloat(pairDeltaToMatch) {
             //设定眉眼间距大于10，且鼻子位置不动为眨眼
             let mouthKey:String = "mouth_middle"
@@ -61,10 +67,18 @@ class KKKDetectValidatorEye:KKKDetectStatusValidator{
             if (mouthYMax - mouthYMin) < noseDletaToMatch
             && (mouthXMax - mouthXMin) < noseDletaToMatch {
                 self.validCounts += 1
+                self.minIndex = 0
+                self.maxIndex = 0
+                self.minYDetalLeft = 0
+                self.maxYDetalLeft = 0
+                self.infoArray.removeAllObjects()
+                print("#✅眨眼通过第\(self.validCounts)次---\n眉眼距离:\(minYDetalLeft)--\(maxYDetalLeft) ----\n鼻子 x:\(mouthXMax)-\(mouthXMin) y:\(mouthYMax)-\(mouthYMin)")
             }
         }
         
-        if self.validCounts > validCountsMax {
+//        self.printInfoArray()
+        
+        if self.validCounts >= validCountsMax {
             //设定眨眼两次才算通过
             self.validateOK = true
         }
@@ -94,7 +108,7 @@ class KKKDetectValidatorEye:KKKDetectStatusValidator{
         self.minYDetalLeft = 0
         self.maxYDetalLeft = 0
         self.validCounts = 0
-        self.validCountsMax = 2
+        self.validCountsMax = 1
         super.init()
         self.checkCountsMax = 30*2
     }
@@ -104,7 +118,6 @@ class KKKDetectValidatorEye:KKKDetectStatusValidator{
         self.maxIndex = 0
         self.minYDetalLeft = 0
         self.maxYDetalLeft = 0
-        self.validCountsMax = 0
         self.validCounts = 0
         super.empty()
         

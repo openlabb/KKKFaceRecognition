@@ -24,7 +24,7 @@ class KKKDetectStatusValidator:NSObject{
         checkCountsMax = 30*2
         imageHeight = 0
         imageWidth = 0
-        isFrontCamera = false
+        isFrontCamera = true
         infoArray = []
         super.init()
     }
@@ -50,7 +50,7 @@ class KKKDetectStatusValidator:NSObject{
     
     //添加需要取点距离的键值对
     func addPair(infoDic:NSDictionary,key1:String,key2:String){
-        let yDeltaKeysToPair:Array = [key1,key1]
+        let yDeltaKeysToPair:Array = [key1,key2]
         let pairNewKey = pairName(yDeltaKeysToPair[0],key2: yDeltaKeysToPair[1])
         let pairNewValue = pairValue(infoDic, key1: yDeltaKeysToPair[0], key2: yDeltaKeysToPair[1])
         infoDic.setValue(pairNewValue, forKey: pairNewKey)
@@ -81,9 +81,40 @@ class KKKDetectStatusValidator:NSObject{
         checkCountsMax = 30*2
         imageHeight = 0
         imageWidth = 0
-        isFrontCamera = false
+        isFrontCamera = true
     }
 
+    
+    func printInfoArray(){
+        let itemArrayInfo:NSMutableDictionary = [:].mutableCopy() as! NSMutableDictionary
+        let keyArray:Array<String> = (self.infoArray[0] as! NSDictionary).allKeys as! Array<String>
+        for key in keyArray{
+            let xArray = [].mutableCopy()
+            let yArray = [].mutableCopy()
+            let xyInfo = [KCIFlyFaceResultPointX:xArray,KCIFlyFaceResultPointY:yArray]
+            itemArrayInfo.setObject(xyInfo, forKey: key)
+        }
+        
+        for index in 0...self.infoArray.count-1 {
+            let item:Dictionary<String,Dictionary<String,Int>> =  self.infoArray[index] as! Dictionary<String,Dictionary<String,Int>>
+            for key in keyArray {
+                var xyInfo:Dictionary<String,Int> = item[key]! as Dictionary<String,Int>
+
+
+                var mInfo:Dictionary<String,Array<Int>> = itemArrayInfo[key] as! Dictionary<String,Array<Int>>
+                var xArray:Array<Int> = mInfo[KCIFlyFaceResultPointX]! as Array<Int>
+                var yArray:Array<Int> = mInfo[KCIFlyFaceResultPointY]! as Array<Int>
+                xArray.append(xyInfo[KCIFlyFaceResultPointX]!)
+                yArray.append(xyInfo[KCIFlyFaceResultPointY]!)
+                mInfo[KCIFlyFaceResultPointX] = xArray
+                mInfo[KCIFlyFaceResultPointY] = yArray
+                itemArrayInfo.setObject(mInfo, forKey: key)
+            }
+            
+        }
+        print("🚼--\(itemArrayInfo)")
+
+    }
 
     
 }
