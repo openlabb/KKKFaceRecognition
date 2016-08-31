@@ -34,6 +34,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     var iFlySpFaceRequest: IFlyFaceRequest?
     
     var detector:KKKDetector
+    
     //MARK: ----Life cycle
     private var statusContext = "statusContext"
     
