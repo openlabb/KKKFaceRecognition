@@ -35,13 +35,21 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     
     var detector:KKKDetector
     //MARK: ----Life cycle
-    
+    private var statusContext = "statusContext"
+
     required init?(coder aDecoder: NSCoder) {
         self.isRegister = true
         self.detector = KKKDetector()
         super.init(coder: aDecoder)
+        
+        self.detector.addObserver(self, forKeyPath: "statusData", options: NSKeyValueObservingOptions.New, context: &statusContext)
+
         //        fatalError("init(coder:) has not been implemented")
     }
+    
+    
+    
+    
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
@@ -133,11 +141,26 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.navigationItem.rightBarButtonItem = item
     }
     
+    
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
-        self.captureManager?.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+        if context == &statusContext {
+            if keyPath == "statusData" {
+                self.showStatus()
+            }
+        }else{
+            super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+            self.captureManager?.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+            
+        }
+
     }
     
+    
+    deinit {
+        self.detector.removeObserver(self, forKeyPath: "statusData", context: &statusContext)
+    }
+    
+
     
     
     //MARK: ----CaptureManagerDelegate
@@ -202,8 +225,6 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
 //            return nil
         }
         
-        showStatus()
-
         
 //        print(" ✅ 1.检测到合格Size的人脸 -----\n")
 
@@ -261,8 +282,8 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     
     
     func parseResult(paraList:NSArray) -> Void {
-        do{
-            
+//        do{
+        
             let result = paraList[0] as! String
             let faceImg:IFlyFaceImage = paraList[1] as! IFlyFaceImage
             let resultData = result.dataUsingEncoding(NSUTF8StringEncoding)
@@ -353,9 +374,9 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             
             faceArray = nil;
             
-        }catch let exception as NSException{
-            print("KKKFaceService:exception----\(exception.name)")
-        }
+//        }catch let exception as NSException{
+//            print("KKKFaceService:exception----\(exception.name)")
+//        }
         
         
         
@@ -381,7 +402,6 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         
         // 获取动作类型
         let strSessionType = jsonArr[KCIFlyFaceResultSST]
-        
         // 人脸注册
         if (strSessionType!.isEqualToString(KCIFlyFaceResultReg)) {
             // 人脸识别是否成功
@@ -392,7 +412,6 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             // 如果返回错误码不等于0，则表示注册遇到错误，并打印错误码
             if (ret?.integerValue != 0) {
                 self.detector.status = .KKKFaceDetectStatusRegisterFail
-                self.showStatus()
                 
             } else {
                 // 如果结果为success，则表示注册成功
@@ -405,27 +424,21 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                     self.faceGID = gid as? String;
                     self.saveFaceGID()
                     self.detector.status = .KKKFaceDetectStatusRegisterSuccess
-                    self.showStatus()
                     
                 } else {
                     self.detector.status = .KKKFaceDetectStatusRegisterFail
-                    self.showStatus()
                 }
+
             }
         }
         
         // 人脸验证
         if (strSessionType!.isEqualToString(KCIFlyFaceResultVerify)) {
-            // 人脸识别是否成功
             let rst = jsonArr[KCIFlyFaceResultRST]
-            // 会话ID
             _ = jsonArr["sid"]
-            // 错误码
             let ret = jsonArr[KCIFlyFaceResultRet]
-            
             if ret?.integerValue != 0 {
                 self.detector.status = .KKKFaceDetectStatusRecognitionFail
-                self.showStatus()
             } else {
                 if let _ = rst?.isEqualToString(KCIFlyFaceResultSuccess) {
                     print("检测到人脸")
@@ -433,19 +446,15 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                     print("未检测到人脸")
                 }
                 
-                // 校验是否成功
                 let verf = jsonArr[KCIFlyFaceResultVerf]
-                // 校验相似度
                 _ = jsonArr["score"]
                 self.faceScore = String.init(format: "%.2f", (jsonArr["score"]?.floatValue)!)
                 
                 if let _ = verf?.boolValue {
                     self.detector.status = .KKKFaceDetectStatusRecognitionSuccess
-                    self.showStatus()
                     
                 } else {
                     self.detector.status = .KKKFaceDetectStatusRecognitionFail
-                    self.showStatus()
                 }
             }
         }
@@ -462,7 +471,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     func onCompleted(error: IFlySpeechError?) {
         if let er = error {
             print("onCompleted | error:\(er.errorDesc)")
-            let errorInfo = "错误码：\(error!.errorCode)\n 错误描述：\(error!.errorDesc)"
+//            let errorInfo = "错误码：\(error!.errorCode)\n 错误描述：\(error!.errorDesc)"
             //                self.performSelectorOnMainThread(#selector(showResultInfo), withObject: errorInfo, waitUntilDone: false)
         }else {
             //                self.performSelectorOnMainThread(#selector(showResultInfo), withObject: "成功啦", waitUntilDone: false)
@@ -470,14 +479,11 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     }
     
     func showResultInfo(resultInfo:String) {
-        let alert = UIAlertView.init(title: "结果", message: resultInfo, delegate: self, cancelButtonTitle: "确定")
-        alert.show()
+//        let alert = UIAlertView.init(title: "结果", message: resultInfo, delegate: self, cancelButtonTitle: "确定")
+//        alert.show()
     }
     
-    
     //MARK: ----helper
-    
-    
     func showStatus()  {
         var prefix = "-------识别中-------\n"
         if self.isRegister {

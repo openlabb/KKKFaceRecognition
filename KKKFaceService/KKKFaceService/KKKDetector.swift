@@ -25,8 +25,17 @@ public enum KKKFaceDetectStatus:Int {
 }
 
 
-class KKKDetector:NSObject{
-    var status:KKKFaceDetectStatus
+ class KKKDetector:NSObject{
+    dynamic var statusData:NSNumber //statusData装箱用来做KVO
+    var status:KKKFaceDetectStatus = .KKKFaceDetectStatusWaiting{
+        willSet(newStatus) {
+            
+        }
+        didSet {
+            self.statusData = (status.rawValue)
+        }
+
+    }
     var statusValidator:KKKDetectStatusValidator
     var lastMarkInfo:NSDictionary
     var lastImageHeight:CGFloat
@@ -38,7 +47,7 @@ class KKKDetector:NSObject{
     
     
     required override init() {
-        status = .KKKFaceDetectStatusWaiting
+//        status = .KKKFaceDetectStatusWaiting
         lastMarkInfo = [:]
         lastImageWidth = 0
         lastImageHeight = 0
@@ -46,6 +55,7 @@ class KKKDetector:NSObject{
         lastTimestamp = NSDate().timeIntervalSince1970
         maxTimeduration = 10
         isFrontCamera = true
+        statusData = (0)
         super.init()
     }
     
@@ -88,7 +98,6 @@ class KKKDetector:NSObject{
                 statusValidator.imageWidth = self.lastImageWidth
                 statusValidator.isFrontCamera = self.isFrontCamera
             }
-            
             if status == .KKKFaceDetectStatusToRequest {
                 //去执行
             }

@@ -23,7 +23,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func setupIFlySettings() {
         IFlySetting.setLogFile(.LVL_ALL)
         IFlySetting.showLogcat(false)
-        
         var paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.CachesDirectory, .UserDomainMask, true)
         let cachePath = paths[0]
         IFlySetting.setLogFilePath(cachePath)
