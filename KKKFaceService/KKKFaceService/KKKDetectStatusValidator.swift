@@ -86,6 +86,7 @@ class KKKDetectStatusValidator:NSObject{
 
     
     func printInfoArray(){
+        //该方法耗CPU，断点expression使用
         let itemArrayInfo:NSMutableDictionary = [:].mutableCopy() as! NSMutableDictionary
         let keyArray:Array<String> = (self.infoArray[0] as! NSDictionary).allKeys as! Array<String>
         for key in keyArray{

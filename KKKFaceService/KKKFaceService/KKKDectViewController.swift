@@ -28,7 +28,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     var viewCanvas:CanvasView?
     var faceDetector:IFlyFaceDetector?
     var stillImageOutput:AVCaptureStillImageOutput?
-
+    
     var faceGID:String?
     var faceScore:String?
     var iFlySpFaceRequest: IFlyFaceRequest?
@@ -36,14 +36,14 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     var detector:KKKDetector
     //MARK: ----Life cycle
     private var statusContext = "statusContext"
-
+    
     required init?(coder aDecoder: NSCoder) {
         self.isRegister = true
         self.detector = KKKDetector()
         super.init(coder: aDecoder)
         
         self.detector.addObserver(self, forKeyPath: "statusData", options: NSKeyValueObservingOptions.New, context: &statusContext)
-
+        
         //        fatalError("init(coder:) has not been implemented")
     }
     
@@ -60,13 +60,13 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.navigationController!.navigationBar.translucent = false;
         
         self.view.backgroundColor = UIColor.blackColor()
-
+        
         self.configSubViews()
         
         self.loadConfigData()
         
     }
-
+    
     
     override func viewDidDisappear(animated: Bool) {
         super.viewDidDisappear(animated)
@@ -80,7 +80,8 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     }
     
     
-    
+    //MARK: ----UI
+
     func addCanvas() -> Void {
         self.viewCanvas = CanvasView(frame: self.captureManager!.previewLayer.frame)
         self.viewCanvas?.center = self.captureManager!.previewLayer.position
@@ -129,7 +130,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.navigationItem.leftBarButtonItem = item
         self.isRegister = false
     }
-
+    
     func refreshRecognition() -> Void {
         self.navigationItem.rightBarButtonItem = nil
         self.previewLayer?.session.startRunning()
@@ -142,6 +143,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     }
     
     
+    //MARK: ----KVO
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if context == &statusContext {
             if keyPath == "statusData" {
@@ -152,16 +154,13 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             self.captureManager?.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
             
         }
-
+        
     }
     
     
     deinit {
         self.detector.removeObserver(self, forKeyPath: "statusData", context: &statusContext)
     }
-    
-
-    
     
     //MARK: ----CaptureManagerDelegate
     func onOutputFaceImage(img: IFlyFaceImage!) {
@@ -172,7 +171,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         if strResult == nil{
             return
         }
-
+        
         let stringAndData:NSArray = [strResult!,img]
         
         self.performSelectorOnMainThread(#selector(parseResult), withObject: stringAndData, waitUntilDone: false)
@@ -220,14 +219,14 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                 self.performSelector(#selector(doFaceRequest), withObject: nil, afterDelay: 0.1
                 )
             }
-
+            
         }else{
-//            return nil
+            //            return nil
         }
         
         
-//        print(" ✅ 1.检测到合格Size的人脸 -----\n")
-
+        //        print(" ✅ 1.检测到合格Size的人脸 -----\n")
+        
         
         rectFace = rScale(rectFace, widthScaleBy, heightScaleBy)
         return  NSStringFromCGRect(rectFace)
@@ -239,7 +238,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         }
         
         self.detector.checkStatus(landmarkDic!, imgHeight: faceImg.height, imgWidth: faceImg.width)
-
+        
         
         let isFrontCamera = self.captureManager?.videoDeviceInput.device.position == .Front;
         
@@ -264,9 +263,9 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
             arrStrPoints .addObject(NSStringFromCGPoint(p))
             
         }
-
         
-
+        
+        
         return arrStrPoints
     }
     
@@ -282,101 +281,99 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     
     
     func parseResult(paraList:NSArray) -> Void {
-//        do{
+        //        do{
+        let result = paraList[0] as! String
+        let faceImg:IFlyFaceImage = paraList[1] as! IFlyFaceImage
+        let resultData = result.dataUsingEncoding(NSUTF8StringEncoding)
         
-            let result = paraList[0] as! String
-            let faceImg:IFlyFaceImage = paraList[1] as! IFlyFaceImage
-            let resultData = result.dataUsingEncoding(NSUTF8StringEncoding)
-            
-            var faceDic:AnyObject? = try! NSJSONSerialization.JSONObjectWithData(resultData!, options: NSJSONReadingOptions(rawValue: 0))
-            guard (faceDic != nil) else {return}
-            
-            let faceRet:NSString? = faceDic!.objectForKey(KCIFlyFaceResultRet) as? NSString
-            var faceArray:NSArray? = faceDic!.objectForKey(KCIFlyFaceResultFace) as? NSArray
-            
-            faceDic = nil
-            
-            var ret:Int32 = 0
-            
-            if faceRet != nil {
-                ret = faceRet!.intValue
-            }
-            
-            //NO face detected
-            if (ret>0 || faceArray == nil || faceArray!.count<1) {
-                dispatch_async(dispatch_get_main_queue(), {
-                    self.hideFace()
-                })
-                return
-            }
-            
-            
-            //face detected
-            //let dataPtr = CFDataCreate(kCFAllocatorDefault, UnsafePointer<UInt8>(faceImg.data.bytes), faceImg.data.length)
-            //let source:CGImageSourceRef = CGImageSourceCreateWithData(dataPtr,nil)!
-            //let cgImage:CGImageRef = CGImageSourceCreateImageAtIndex(source,0,nil)!
-            
-            //把位数据转为CGImage
-            let grayColorSpace:CGColorSpaceRef = CGColorSpaceCreateDeviceGray()!;
-            let dataPtr = CFDataCreate(kCFAllocatorDefault, UnsafePointer<UInt8>(faceImg.data.bytes), faceImg.data.length)
-            let data: UnsafePointer<UInt8> = CFDataGetBytePtr(dataPtr)
-            let dataVoidPtr: UnsafeMutablePointer<Void> = unsafeBitCast(data, UnsafeMutablePointer<Void>.self)
-            let context:CGContextRef = CGBitmapContextCreate(dataVoidPtr,Int(faceImg.width),Int(faceImg.height),8,Int(faceImg.width)*1,grayColorSpace,UInt32(CGImageAlphaInfo.None.rawValue))!
-            let cgImage:CGImageRef = CGBitmapContextCreateImage(context)!
-            let image = UIImage.init(CGImage: cgImage, scale: 1.0, orientation: UIImageOrientation.LeftMirrored)
-            //清空数据
-            faceImg.data = nil
-            //CGContextRelease(context)
-            //CGColorSpaceRelease(grayColorSpace)
-            self.testkkView.image = image
-
-            
-            let arrPersons:NSMutableArray = []
-            
-            for faceInArr in faceArray! {
-                if (faceInArr.isKindOfClass(NSDictionary) ) {
-                    var positionDic:AnyObject? = faceInArr.objectForKey(KCIFlyFaceResultPosition)
-                    let rectString:AnyObject? = self.parseDetect(positionDic as! NSDictionary, faceImg:faceImg)
-                    positionDic = nil
-                    
-                    var landmarkDic:AnyObject? = faceInArr.objectForKey(KCIFlyFaceResultLandmark)
-                    //                    if landmarkDic == nil {
-                    //                        return
-                    //                    }
-                    
-                    var strPoints:NSArray? = self.parseAlign(landmarkDic as? NSDictionary, orignImage: faceImg)
-                    landmarkDic = nil
-                    
-                    var dicPerson:AnyObject? = [:].mutableCopy()
-                    if rectString != nil {
-                        (dicPerson as! NSMutableDictionary).setValue(rectString, forKey: RECT_KEY)
-                    }
-                    
-                    if strPoints?.count>0 {
-                        (dicPerson as! NSMutableDictionary).setValue(strPoints, forKey: POINTS_KEY)
-                    }else{
-                        //                        return
-                    }
-                    
-                    strPoints = nil
-                    
-                    (dicPerson as! NSMutableDictionary).setValue("", forKey: RECT_ORI)
-                    arrPersons.addObject(dicPerson as! NSMutableDictionary)
-                    
-                    dicPerson = nil
-                    
-                    dispatch_async(dispatch_get_main_queue(), {
-                        self.showFaceLandMarksAndFaceRectWithPersonsArray(arrPersons)
-                    })
-                    
+        var faceDic:AnyObject? = try! NSJSONSerialization.JSONObjectWithData(resultData!, options: NSJSONReadingOptions(rawValue: 0))
+        guard (faceDic != nil) else {return}
+        
+        let faceRet:NSString? = faceDic!.objectForKey(KCIFlyFaceResultRet) as? NSString
+        var faceArray:NSArray? = faceDic!.objectForKey(KCIFlyFaceResultFace) as? NSArray
+        
+        faceDic = nil
+        
+        var ret:Int32 = 0
+        
+        if faceRet != nil {
+            ret = faceRet!.intValue
+        }
+        
+        //NO face detected
+        if (ret>0 || faceArray == nil || faceArray!.count<1) {
+            dispatch_async(dispatch_get_main_queue(), {
+                self.hideFace()
+            })
+            return
+        }
+        
+        //face detected
+        //let dataPtr = CFDataCreate(kCFAllocatorDefault, UnsafePointer<UInt8>(faceImg.data.bytes), faceImg.data.length)
+        //let source:CGImageSourceRef = CGImageSourceCreateWithData(dataPtr,nil)!
+        //let cgImage:CGImageRef = CGImageSourceCreateImageAtIndex(source,0,nil)!
+        
+        //把位数据转为CGImage
+        let grayColorSpace:CGColorSpaceRef = CGColorSpaceCreateDeviceGray()!;
+        let dataPtr = CFDataCreate(kCFAllocatorDefault, UnsafePointer<UInt8>(faceImg.data.bytes), faceImg.data.length)
+        let data: UnsafePointer<UInt8> = CFDataGetBytePtr(dataPtr)
+        let dataVoidPtr: UnsafeMutablePointer<Void> = unsafeBitCast(data, UnsafeMutablePointer<Void>.self)
+        let context:CGContextRef = CGBitmapContextCreate(dataVoidPtr,Int(faceImg.width),Int(faceImg.height),8,Int(faceImg.width)*1,grayColorSpace,UInt32(CGImageAlphaInfo.None.rawValue))!
+        let cgImage:CGImageRef = CGBitmapContextCreateImage(context)!
+        let image = UIImage.init(CGImage: cgImage, scale: 1.0, orientation: UIImageOrientation.LeftMirrored)
+        //清空数据
+        faceImg.data = nil
+        //CGContextRelease(context)
+        //CGColorSpaceRelease(grayColorSpace)
+        self.testkkView.image = image
+        
+        
+        let arrPersons:NSMutableArray = []
+        
+        for faceInArr in faceArray! {
+            if (faceInArr.isKindOfClass(NSDictionary) ) {
+                var positionDic:AnyObject? = faceInArr.objectForKey(KCIFlyFaceResultPosition)
+                let rectString:AnyObject? = self.parseDetect(positionDic as! NSDictionary, faceImg:faceImg)
+                positionDic = nil
+                
+                var landmarkDic:AnyObject? = faceInArr.objectForKey(KCIFlyFaceResultLandmark)
+                //                    if landmarkDic == nil {
+                //                        return
+                //                    }
+                
+                var strPoints:NSArray? = self.parseAlign(landmarkDic as? NSDictionary, orignImage: faceImg)
+                landmarkDic = nil
+                
+                var dicPerson:AnyObject? = [:].mutableCopy()
+                if rectString != nil {
+                    (dicPerson as! NSMutableDictionary).setValue(rectString, forKey: RECT_KEY)
                 }
+                
+                if strPoints?.count>0 {
+                    (dicPerson as! NSMutableDictionary).setValue(strPoints, forKey: POINTS_KEY)
+                }else{
+                    //                        return
+                }
+                
+                strPoints = nil
+                
+                (dicPerson as! NSMutableDictionary).setValue("", forKey: RECT_ORI)
+                arrPersons.addObject(dicPerson as! NSMutableDictionary)
+                
+                dicPerson = nil
+                
+                dispatch_async(dispatch_get_main_queue(), {
+                    self.showFaceLandMarksAndFaceRectWithPersonsArray(arrPersons)
+                })
+                
             }
-            
-            faceArray = nil;
-            
-//        }catch let exception as NSException{
-//            print("KKKFaceService:exception----\(exception.name)")
-//        }
+        }
+        
+        faceArray = nil;
+        
+        //        }catch let exception as NSException{
+        //            print("KKKFaceService:exception----\(exception.name)")
+        //        }
         
         
         
@@ -428,7 +425,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
                 } else {
                     self.detector.status = .KKKFaceDetectStatusRegisterFail
                 }
-
+                
             }
         }
         
@@ -461,7 +458,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         
         print("记录数: \(jsonArr.count)")
         print(jsonArr)
-
+        
         
         //            if result.isEmpty {
         //                self.resultStrings = self.resultStrings?.stringByAppendingString(result)
@@ -471,7 +468,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     func onCompleted(error: IFlySpeechError?) {
         if let er = error {
             print("onCompleted | error:\(er.errorDesc)")
-//            let errorInfo = "错误码：\(error!.errorCode)\n 错误描述：\(error!.errorDesc)"
+            //            let errorInfo = "错误码：\(error!.errorCode)\n 错误描述：\(error!.errorDesc)"
             //                self.performSelectorOnMainThread(#selector(showResultInfo), withObject: errorInfo, waitUntilDone: false)
         }else {
             //                self.performSelectorOnMainThread(#selector(showResultInfo), withObject: "成功啦", waitUntilDone: false)
@@ -479,11 +476,139 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
     }
     
     func showResultInfo(resultInfo:String) {
-//        let alert = UIAlertView.init(title: "结果", message: resultInfo, delegate: self, cancelButtonTitle: "确定")
-//        alert.show()
+        //        let alert = UIAlertView.init(title: "结果", message: resultInfo, delegate: self, cancelButtonTitle: "确定")
+        //        alert.show()
     }
     
-    //MARK: ----helper
+    //MARK: ----Request: register or recognition
+    func doFaceRequest()  {
+        
+        //if self.iFlySpFaceRequest == nil{
+        self.iFlySpFaceRequest = IFlyFaceRequest.sharedInstance()
+        self.iFlySpFaceRequest?.delegate = self
+        self.iFlySpFaceRequest?.setParameter(kIFlyAPPID, forKey: IFlySpeechConstant.APPID())
+        self.iFlySpFaceRequest?.setParameter(kIFlyAPPID, forKey: "auth_id")
+        self.iFlySpFaceRequest?.setParameter("del", forKey: "property")
+        //}
+        
+        if isRegister == true {
+            self.iFlySpFaceRequest?.setParameter(IFlySpeechConstant.FACE_REG(), forKey: IFlySpeechConstant.FACE_SST())
+            //  压缩图片大小
+            //            testkkView.image = UIImage.init(named: "111.jpg")
+            
+            let requestImg:UIImage = testkkView.image!
+            UIGraphicsBeginImageContext(CGSize(width: (requestImg.size.width)/2.0, height: (requestImg.size.height)/2.0))
+            requestImg.drawInRect(CGRectMake(0.0, 0.0, (requestImg.size.width)/2.0, (requestImg.size.height)/2.0))
+            let newImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext();
+            let imgData = UIImageJPEGRepresentation(newImage, 0.001)!
+            
+            //            let imgData = testkkView.image!.compressedData()
+            //            let imgData:NSData = UIImageJPEGRepresentation(testkkView.image!,1.0)!
+            
+            let dateFormatter:NSDateFormatter = NSDateFormatter();
+            dateFormatter.dateFormat = "yyyyMMddHHmmss";
+            let dateString:String = dateFormatter.stringFromDate(NSDate())
+            
+            
+            var paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.CachesDirectory, .UserDomainMask, true)
+            let cachePath = paths[0]
+            imgData.writeToFile(cachePath+"/"+dateString, atomically: true)
+            
+            print("reg image data length: \(imgData.length)")
+            self.iFlySpFaceRequest?.sendRequest(imgData)
+        }else{
+            
+            self.iFlySpFaceRequest?.setParameter(IFlySpeechConstant.FACE_VERIFY(), forKey: IFlySpeechConstant.FACE_SST())
+            self.iFlySpFaceRequest?.setParameter(self.faceGID, forKey: IFlySpeechConstant.FACE_GID())
+            self.iFlySpFaceRequest?.setParameter("2000", forKey: "wait_time")
+            //  压缩图片大小
+            //            let imgData = testkkView.image!.compressedData()
+            
+            let requestImg:UIImage = testkkView.image!
+            UIGraphicsBeginImageContext(CGSize(width: (requestImg.size.width)/2.0, height: (requestImg.size.height)/2.0))
+            requestImg.drawInRect(CGRectMake(0.0, 0.0, (requestImg.size.width)/2.0, (requestImg.size.height)/2.0))
+            let newImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext();
+            let imgData = UIImageJPEGRepresentation(newImage, 0.001)!
+            
+            print("faceid:\(self.faceGID),verify image data length: \(imgData.length)")
+            self.iFlySpFaceRequest?.sendRequest(imgData)
+        }
+        
+        self.detector.empty()
+        
+    }
+    
+    func doCapturePhoto() -> Void {
+        var videoConnection:AVCaptureConnection?
+        
+        for connection in (self.stillImageOutput?.connections)! {
+            guard let inputPorts: [AVCaptureInputPort] = connection.inputPorts as? [AVCaptureInputPort] else {
+                return
+            }
+            for port in inputPorts {
+                if port.mediaType == AVMediaTypeVideo {
+                    videoConnection = connection as? AVCaptureConnection
+                    break
+                }
+            }
+        }
+        
+        
+        self.stillImageOutput!.captureStillImageAsynchronouslyFromConnection(videoConnection, completionHandler: { buffer, error in
+            
+            guard let buffer = buffer, imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(buffer), image = UIImage(data: imageData) else {
+                //                completion(nil)
+                return
+            }
+            
+            self.testkkView.image = image
+            if ((self.captureManager?.session.running) == true){
+                self.previewLayer?.session.stopRunning()
+            }
+            self.doFaceRequest()
+            
+        })
+        
+    }
+    
+    
+    //MARK: ----Helper
+    func toggleRegister()  {
+        self.isRegister = true
+    }
+    
+    func hideFace(){
+        guard self.viewCanvas!.hidden else{
+            self.viewCanvas?.hidden = true
+            return
+        }
+    }
+    
+    func loadConfigData() {
+        self.faceGID =  NSUserDefaults.standardUserDefaults().valueForKey("faceGID") as! String!
+        if self.faceGID != nil {
+            self.isRegister = false
+        }else{
+            self.isRegister = true
+        }
+    }
+    
+    func saveFaceGID(){
+        let userDefault = NSUserDefaults.standardUserDefaults()
+        userDefault.setObject(self.faceGID, forKey: "faceGID")
+        userDefault.synchronize()
+    }
+    
+    func deleteFaceGID() {
+        let userDefault = NSUserDefaults.standardUserDefaults()
+        userDefault.removeObjectForKey("faceGID")
+        userDefault.synchronize()
+        self.isRegister = true
+        self.navigationItem.rightBarButtonItem = nil
+    }
+    
     func showStatus()  {
         var prefix = "-------识别中-------\n"
         if self.isRegister {
@@ -524,144 +649,7 @@ class KKKDectViewController: UIViewController,IFlyFaceRequestDelegate,CaptureMan
         self.infoLabel.text = prefix + info
         
     }
-    
-    func toggleRegister()  {
-        self.isRegister = true
-    }
-    
-    func hideFace(){
-        guard self.viewCanvas!.hidden else{
-            self.viewCanvas?.hidden = true
-            return
-        }
-    }
-    
-    
-    func loadConfigData() {
-        self.faceGID =  NSUserDefaults.standardUserDefaults().valueForKey("faceGID") as! String!
-        if self.faceGID != nil {
-            self.isRegister = false
-        }else{
-            self.isRegister = true
-        }
-    }
 
-    func saveFaceGID(){
-        let userDefault = NSUserDefaults.standardUserDefaults()
-        userDefault.setObject(self.faceGID, forKey: "faceGID")
-        userDefault.synchronize()
-    }
-    
-    func deleteFaceGID() {
-        let userDefault = NSUserDefaults.standardUserDefaults()
-        userDefault.removeObjectForKey("faceGID")
-        userDefault.synchronize()
-        self.isRegister = true
-        self.navigationItem.rightBarButtonItem = nil
-    }
-    
-    
-    
-    //MARK: ----Request: register or recognition
-    
-    func doFaceRequest()  {
-        self.detector.empty()
-
-        //if self.iFlySpFaceRequest == nil{
-            self.iFlySpFaceRequest = IFlyFaceRequest.sharedInstance()
-            self.iFlySpFaceRequest?.delegate = self
-            self.iFlySpFaceRequest?.setParameter(kIFlyAPPID, forKey: IFlySpeechConstant.APPID())
-            self.iFlySpFaceRequest?.setParameter(kIFlyAPPID, forKey: "auth_id")
-            self.iFlySpFaceRequest?.setParameter("del", forKey: "property")
-        //}
-        
-        if isRegister == true {
-            self.iFlySpFaceRequest?.setParameter(IFlySpeechConstant.FACE_REG(), forKey: IFlySpeechConstant.FACE_SST())
-            //  压缩图片大小
-//            testkkView.image = UIImage.init(named: "111.jpg")
-            
-            let requestImg:UIImage = testkkView.image!
-            UIGraphicsBeginImageContext(CGSize(width: (requestImg.size.width)/2.0, height: (requestImg.size.height)/2.0))
-            requestImg.drawInRect(CGRectMake(0.0, 0.0, (requestImg.size.width)/2.0, (requestImg.size.height)/2.0))
-            let newImage = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext();
-            let imgData = UIImageJPEGRepresentation(newImage, 0.001)!
-
-//            let imgData = testkkView.image!.compressedData()
-//            let imgData:NSData = UIImageJPEGRepresentation(testkkView.image!,1.0)!
-            
-            let dateFormatter:NSDateFormatter = NSDateFormatter();
-            dateFormatter.dateFormat = "yyyyMMddHHmmss";
-            let dateString:String = dateFormatter.stringFromDate(NSDate())
-            
-            
-            var paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.CachesDirectory, .UserDomainMask, true)
-            let cachePath = paths[0]
-            imgData.writeToFile(cachePath+"/"+dateString, atomically: true)
-
-            print("reg image data length: \(imgData.length)")
-            self.iFlySpFaceRequest?.sendRequest(imgData)
-        }else{
-            
-            self.iFlySpFaceRequest?.setParameter(IFlySpeechConstant.FACE_VERIFY(), forKey: IFlySpeechConstant.FACE_SST())
-            self.iFlySpFaceRequest?.setParameter(self.faceGID, forKey: IFlySpeechConstant.FACE_GID())
-            self.iFlySpFaceRequest?.setParameter("2000", forKey: "wait_time")
-            //  压缩图片大小
-
-            
-            
-//            let imgData = testkkView.image!.compressedData()
-            
-            let requestImg:UIImage = testkkView.image!
-            UIGraphicsBeginImageContext(CGSize(width: (requestImg.size.width)/2.0, height: (requestImg.size.height)/2.0))
-            requestImg.drawInRect(CGRectMake(0.0, 0.0, (requestImg.size.width)/2.0, (requestImg.size.height)/2.0))
-            let newImage = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext();
-            let imgData = UIImageJPEGRepresentation(newImage, 0.001)!
-
-            print("faceid:\(self.faceGID),verify image data length: \(imgData.length)")
-            self.iFlySpFaceRequest?.sendRequest(imgData)
-        }
-        
-    }
-
-    
-    
-    
-    func doCapturePhoto() -> Void {
-        var videoConnection:AVCaptureConnection?
-        
-        for connection in (self.stillImageOutput?.connections)! {
-            guard let inputPorts: [AVCaptureInputPort] = connection.inputPorts as? [AVCaptureInputPort] else {
-                return
-            }
-            for port in inputPorts {
-                if port.mediaType == AVMediaTypeVideo {
-                    videoConnection = connection as? AVCaptureConnection
-                    break
-                }
-            }
-        }
-
-        
-        self.stillImageOutput!.captureStillImageAsynchronouslyFromConnection(videoConnection, completionHandler: { buffer, error in
-            
-            guard let buffer = buffer, imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(buffer), image = UIImage(data: imageData) else {
-//                completion(nil)
-                return
-            }
-            
-            self.testkkView.image = image
-            if ((self.captureManager?.session.running) == true){
-                self.previewLayer?.session.stopRunning()
-            }
-            self.doFaceRequest()
-            
-        })
-
-    }
-    
-    
     
     /*
      // MARK: - Navigation
